@@ -241,82 +241,79 @@ WEAPONS = ["foil", "epee", "sabre"]
 
 @app.post("/solve")
 def solve():
-    return "Hello World!"
-    # data = request.get_json()
-    # fencers = data["fencers"]
+    fencers = request.get_json()
+    # If the number of fencers is not a multiple of 3, randomly exclude male fencers until it is
+    if len(fencers) % 3 != 0:
+        to_remove = len(fencers) % 3
+        male_fencers = [fencer for fencer in fencers if fencer["gender"].upper() == "M"]
+        reserves = random.sample(male_fencers, to_remove)
+    fencers = [fencer for fencer in fencers if fencer not in reserves]
 
-    # n = len(fencers)
-    # if n % 3 != 0:
-    #     return (
-    #         jsonify(
-    #             {
-    #                 "status": "error",
-    #                 "message": "Number of fencers must be divisible by 3",
-    #             }
-    #         ),
-    #         400,
-    #     )
+    # If the number of female fencers is not enought to have 1 per team, randomly exclude male fencers until it is
+    n_females = len([fencer for fencer in fencers if fencer["gender"].upper() == "F"])
+    if 3 * n_females < len(fencers):
+        to_remove = len(fencers) - 3 * n_females
+        male_fencers = [fencer for fencer in fencers if fencer["gender"].upper() == "M"]
+        reserves = reserves + random.sample(male_fencers, to_remove)
+    fencers = [fencer for fencer in fencers if fencer not in reserves]
 
-    # teams = n // 3
-    # solver = pywraplp.Solver.CreateSolver("CBC")
+    # Set up the solver
+    solver = pywraplp.Solver.CreateSolver("CBC")
+    n = len(fencers)
+    teams = len(fencers) // 3
 
-    # # Binary decision variables x[i,t,w]
-    # x = {}
-    # for i in range(n):
-    #     for t in range(teams):
-    #         for w in WEAPONS:
-    #             x[(i, t, w)] = solver.BoolVar(f"x_{i}_{t}_{w}")
+    # VARIABLES: Binary x[i,t,w] = 1 if fencer i is assigned to team t in weapon w, otherwise 0.
+    x = {}
+    for i in range(n):
+        for t in range(teams):
+            for w in WEAPONS:
+                x[(i, t, w)] = solver.BoolVar(f"x_{i}_{t}_{w}")
 
-    # # Constraint: each fencer assigned exactly once
-    # for i in range(n):
-    #     solver.Add(sum(x[(i, t, w)] for t in range(teams) for w in WEAPONS) == 1)
+    # CONSTRAINTS: Each fencer assigned exactly once
+    for i in range(n):
+        solver.Add(sum(x[(i, t, w)] for t in range(teams) for w in WEAPONS) == 1)
 
-    # # Constraint: each team has exactly ONE of each weapon
-    # for t in range(teams):
-    #     for w in WEAPONS:
-    #         solver.Add(sum(x[(i, t, w)] for i in range(n)) == 1)
+    # CONSTRAINTS: Each has exactly one of each weapon
+    for t in range(teams):
+        for w in WEAPONS:
+            solver.Add(sum(x[(i, t, w)] for i in range(n)) == 1)
 
-    # # Constraint: each team must have at least one female fencer
-    # for t in range(teams):
-    #     solver.Add(
-    #         sum(
-    #             x[(i, t, w)]
-    #             for i in range(n)
-    #             for w in WEAPONS
-    #             if fencers[i]["gender"].upper() == "F"
-    #         )
-    #         >= 1
-    #     )
+    # CONSTRAINTS: Each team must have at least one female fencer
+    for t in range(teams):
+        solver.Add(
+            sum(
+                x[(i, t, w)]
+                for i in range(n)
+                for w in WEAPONS
+                if fencers[i]["gender"].upper() == "F"
+            )
+            >= 1
+        )
 
-    # # Objective: maximise preference score (smaller rank = better, so invert)
-    # # If given 1=best, 3=worst, transform score = (4 - pref)
-    # objective = solver.Objective()
-    # for i in range(n):
-    #     for t in range(teams):
-    #         for w in WEAPONS:
-    #             pref_rank = fencers[i]["preference"][w]  # 1–3
-    #             score = 4 - pref_rank
-    #             objective.SetCoefficient(x[(i, t, w)], score)
+    # OBJECTIVE: maximise preference score
+    objective = solver.Objective()
+    for i in range(n):
+        for t in range(teams):
+            for w in WEAPONS:
+                pref_rank = fencers[i]["preference"][w]
+                score = 4 - pref_rank
+                objective.SetCoefficient(x[(i, t, w)], score)
+    objective.SetMaximization()
 
-    # objective.SetMaximization()
-
-    # status = solver.Solve()
-
-    # if status != pywraplp.Solver.OPTIMAL:
-    #     return jsonify({"status": "infeasible"}), 200
-
-    # # Extract solution
-    # output = []
-    # for t in range(teams):
-    #     team_members = {}
-    #     for w in WEAPONS:
-    #         for i in range(n):
-    #             if x[(i, t, w)].solution_value() > 0.5:
-    #                 team_members[w] = {
-    #                     "name": fencers[i]["name"],
-    #                     "gender": fencers[i]["gender"],
-    #                     "preference": fencers[i]["preference"][w],
-    #                 }
-    #     output.append({"team": t + 1, "members": team_members})
-
-    # return jsonify({"status": "ok", "teams": output})
+    status = solver.Solve()
+    if status != pywraplp.Solver.OPTIMAL:
+        return jsonify({"status": "fail", "teams": {}})
+    # Extract solution
+    output = []
+    for t in range(teams):
+        team_members = {}
+        for w in WEAPONS:
+            for i in range(n):
+                if x[(i, t, w)].solution_value() > 0.5:
+                    team_members[w] = {
+                        "name": fencers[i]["name"],
+                        "gender": fencers[i]["gender"],
+                        "preference": fencers[i]["preference"][w],
+                    }
+        output.append({"team": t + 1, "members": team_members})
+    return jsonify({"status": "ok", "teams": output})
