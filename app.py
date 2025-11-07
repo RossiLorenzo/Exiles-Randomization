@@ -241,7 +241,7 @@ WEAPONS = ["foil", "epee", "sabre"]
 
 @app.post("/solve")
 def solve():
-    fencers = request.get_json()
+    fencers = request.get_json()["fencers"]
     # If the number of fencers is not a multiple of 3, randomly exclude male fencers until it is
     if len(fencers) % 3 != 0:
         to_remove = len(fencers) % 3
