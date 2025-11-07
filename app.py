@@ -1,3 +1,5 @@
+import random
+
 from flask import Flask, jsonify, request
 from ortools.linear_solver import pywraplp
 
@@ -239,9 +241,8 @@ input = [
 WEAPONS = ["foil", "epee", "sabre"]
 
 
-@app.post("/solve")
+@app.route("/solve", methods=["POST"])
 def solve():
-    return request
     fencers = request.get_json()["fencers"]
     # If the number of fencers is not a multiple of 3, randomly exclude male fencers until it is
     if len(fencers) % 3 != 0:
@@ -318,3 +319,7 @@ def solve():
                     }
         output.append({"team": t + 1, "members": team_members})
     return jsonify({"status": "ok", "teams": output})
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8080, debug=False)
