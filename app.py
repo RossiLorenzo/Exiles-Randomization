@@ -80,7 +80,8 @@ def solve():
     for i in range(n):
         for t in range(teams):
             for w in WEAPONS:
-                score = int(fencers[i]["preference"][w])
+                rank = fencers[i]["preference"][w]
+                score = 4 - rank
                 objective.SetCoefficient(x[(i, t, w)], score)
     objective.SetMaximization()
 
