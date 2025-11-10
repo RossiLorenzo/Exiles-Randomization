@@ -17,8 +17,8 @@ def solve():
     n_m = len([fencer for fencer in fencers if fencer["gender"].upper() == "M"])
     n = n_f + n_m
     teams = n // 3
-    print("Participants: ", n)
-    print("M: ", n_m, " ; F: ", n_f)
+    print("Participants:", n)
+    print("M:", n_m, " ; F:", n_f)
 
     # If the number of F is not enought to have 1 per team, randomly exclude M fencers until it is
     if 3 * n_f < n:
@@ -99,6 +99,7 @@ def solve():
         for t in range(teams):
             for w in WEAPONS:
                 rank = fencers[i]["preference"][w]
+                print(rank)
                 score = 4 - rank
                 objective.SetCoefficient(x[(i, t, w)], score)
     objective.SetMaximization()
