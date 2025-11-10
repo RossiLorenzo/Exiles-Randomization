@@ -15,22 +15,15 @@ def solve():
     reserves = []
     n_f = len([fencer for fencer in fencers if fencer["category"].upper() == "F"])
     n_m = len([fencer for fencer in fencers if fencer["category"].upper() == "M"])
-    n = n_f + n_m
-    teams = n // 3
     print("Participants:", n)
     print("M:", n_m, " ; F:", n_f)
 
     # If the number of F is not enought to have 1 per team, randomly exclude M fencers until it is
-    if 3 * n_f < n:
-        print("3*n_f < n")
-        to_remove = n - 3 * n_f
-        print(n - 3 * n_f)
+    if 3 * n_f < len(fencers):
+        to_remove = len(fencers) - 3 * n_f
         m_fencers = [fencer for fencer in fencers if fencer["category"].upper() == "M"]
         reserves = reserves + random.sample(m_fencers, to_remove)
         fencers = [fencer for fencer in fencers if fencer not in reserves]
-        n_m = len([fencer for fencer in fencers if fencer["category"].upper() == "M"])
-        n = n_f + n_m
-        teams = n // 3
 
     # I don't think we'll have this, but if we have so many F that we get F only teams remove some F
     # if n_f > teams*2:
@@ -43,15 +36,17 @@ def solve():
     #     teams = len(fencers) // 3
 
     # If the number of fencers is not a multiple of 3, randomly exclude fencers until it is
-    if n % 3 != 0:
-        to_remove = n % 3
+    if len(fencers) % 3 != 0:
+        to_remove = len(fencers) % 3
         m_fencers = [fencer for fencer in fencers if fencer["category"].upper() == "M"]
         reserves = reserves + random.sample(m_fencers, to_remove)
         fencers = [fencer for fencer in fencers if fencer not in reserves]
-        n = n_f + n_m
 
     # Set up the solver
     solver = pywraplp.Solver.CreateSolver("CBC")
+    n = len(fencers)
+    teams = n // 3
+    print("Participants:", n, "Teams", teams)
 
     # VARIABLES: Binary x[i,t,w] = 1 if fencer i is assigned to team t in weapon w, otherwise 0.
     x = {}
@@ -98,9 +93,7 @@ def solve():
     for i in range(n):
         for t in range(teams):
             for w in WEAPONS:
-                rank = fencers[i]["preference"][w]
-                print(rank)
-                score = 4 - rank
+                score = fencers[i]["preference"][w]
                 objective.SetCoefficient(x[(i, t, w)], score)
     objective.SetMaximization()
 
