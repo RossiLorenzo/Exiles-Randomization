@@ -7,6 +7,7 @@ app = Flask(__name__)
 
 WEAPONS = ["foil", "epee", "sabre"]
 
+
 @app.route("/solve", methods=["POST"])
 def solve():
     # Get data and calculate M/F particpant numbers
@@ -18,7 +19,7 @@ def solve():
     if 3 * n_f < len(fencers):
         to_remove = len(fencers) - 3 * n_f
         m_fencers = [fencer for fencer in fencers if fencer["gender"].upper() == "M"]
-        reserves = reserves + random.sample(m_fencers, to_remove)
+        reserves = random.sample(m_fencers, to_remove)
     fencers = [fencer for fencer in fencers if fencer not in reserves]
     n_f = len([fencer for fencer in fencers if fencer["gender"].upper() == "F"])
     n_m = len([fencer for fencer in fencers if fencer["gender"].upper() == "M"])
@@ -27,7 +28,7 @@ def solve():
     if len(fencers) % 3 != 0:
         to_remove = len(fencers) % 3
         m_fencers = [fencer for fencer in fencers if fencer["gender"].upper() == "M"]
-        reserves = random.sample(m_fencers, to_remove)
+        reserves = reserves + random.sample(m_fencers, to_remove)
     fencers = [fencer for fencer in fencers if fencer not in reserves]
 
     # Set up the solver
@@ -99,8 +100,8 @@ def solve():
         output.append({"team": t + 1, "members": team_members})
 
     # We might still have some fencers in the reserves to assign
-        # If it's more than 3 then we form teams
-        # If it's less than 3 we assign them to existing teams
+    # If it's more than 3 then we form teams
+    # If it's less than 3 we assign them to existing teams
     # if len(reserves) >= 3:
 
     # Return results
