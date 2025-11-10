@@ -15,7 +15,7 @@ def solve():
     reserves = []
     n_f = len([fencer for fencer in fencers if fencer["category"].upper() == "F"])
     n_m = len([fencer for fencer in fencers if fencer["category"].upper() == "M"])
-    print("Participants:", n)
+    print("Participants:", len(fencers))
     print("M:", n_m, " ; F:", n_f)
 
     # If the number of F is not enought to have 1 per team, randomly exclude M fencers until it is
