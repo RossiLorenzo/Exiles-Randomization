@@ -17,10 +17,14 @@ def solve():
     n_m = len([fencer for fencer in fencers if fencer["gender"].upper() == "M"])
     n = len(fencers)
     teams = len(fencers) // 3
+    print("Participants: ", n)
+    print("M: ", n_m, " ; F: ", n_f)
 
     # If the number of F is not enought to have 1 per team, randomly exclude M fencers until it is
     if 3 * n_f < n:
+        print("3*n_f < n")
         to_remove = n - 3 * n_f
+        print(n - 3 * n_f)
         m_fencers = [fencer for fencer in fencers if fencer["gender"].upper() == "M"]
         reserves = reserves + random.sample(m_fencers, to_remove)
         fencers = [fencer for fencer in fencers if fencer not in reserves]
