@@ -12,6 +12,7 @@ WEAPONS = ["foil", "epee", "sabre"]
 def solve():
     # Get data and calculate M/F particpant numbers
     fencers = request.get_json()["fencers"]
+    reserves = []
     n_f = len([fencer for fencer in fencers if fencer["gender"].upper() == "F"])
     n_m = len([fencer for fencer in fencers if fencer["gender"].upper() == "M"])
 
@@ -19,10 +20,8 @@ def solve():
     if 3 * n_f < len(fencers):
         to_remove = len(fencers) - 3 * n_f
         m_fencers = [fencer for fencer in fencers if fencer["gender"].upper() == "M"]
-        reserves = random.sample(m_fencers, to_remove)
+        reserves = reserves + random.sample(m_fencers, to_remove)
     fencers = [fencer for fencer in fencers if fencer not in reserves]
-    n_f = len([fencer for fencer in fencers if fencer["gender"].upper() == "F"])
-    n_m = len([fencer for fencer in fencers if fencer["gender"].upper() == "M"])
 
     # If the number of fencers is not a multiple of 3, randomly exclude M fencers until it is
     if len(fencers) % 3 != 0:
