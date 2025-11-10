@@ -98,6 +98,7 @@ def solve():
     objective.SetMaximization()
 
     # SOLUTION - PART1: Linear optimization
+    status = solver.Solve()
     output = []
     for t in range(teams):
         team_members = {}
