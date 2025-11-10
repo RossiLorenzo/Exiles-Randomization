@@ -15,8 +15,8 @@ def solve():
     reserves = []
     n_f = len([fencer for fencer in fencers if fencer["gender"].upper() == "F"])
     n_m = len([fencer for fencer in fencers if fencer["gender"].upper() == "M"])
-    n = len(fencers)
-    teams = len(fencers) // 3
+    n = n_f + n_m
+    teams = n // 3
     print("Participants: ", n)
     print("M: ", n_m, " ; F: ", n_f)
 
@@ -29,8 +29,8 @@ def solve():
         reserves = reserves + random.sample(m_fencers, to_remove)
         fencers = [fencer for fencer in fencers if fencer not in reserves]
         n_m = len([fencer for fencer in fencers if fencer["gender"].upper() == "M"])
-        n = len(fencers)
-        teams = len(fencers) // 3
+        n = n_f + n_m
+        teams = n // 3
 
     # I don't think we'll have this, but if we have so many F that we get F only teams remove some F
     # if n_f > teams*2:
@@ -48,7 +48,7 @@ def solve():
         m_fencers = [fencer for fencer in fencers if fencer["gender"].upper() == "M"]
         reserves = reserves + random.sample(m_fencers, to_remove)
         fencers = [fencer for fencer in fencers if fencer not in reserves]
-        n = len(fencers)
+        n = n_f + n_m
 
     # Set up the solver
     solver = pywraplp.Solver.CreateSolver("CBC")
