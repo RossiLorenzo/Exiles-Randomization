@@ -51,7 +51,7 @@ def solve():
         for w in WEAPONS:
             solver.Add(sum(x[(i, t, w)] for i in range(n)) == 1)
 
-    # CONSTRAINTS: Each team must has 1+ F fencer
+    # CONSTRAINTS: Each team must has 1+ F fencers
     for t in range(teams):
         solver.Add(
             sum(
@@ -63,7 +63,7 @@ def solve():
             >= 1
         )
 
-    # CONSTRAINTS: No team has 3 F fencer
+    # CONSTRAINTS: Each team has a max of 2 F fencers
     for t in range(teams):
         solver.Add(
             sum(
@@ -72,7 +72,7 @@ def solve():
                 for w in WEAPONS
                 if fencers[i]["gender"].upper() == "F"
             )
-            < 3
+            <= 2
         )
 
     # OBJECTIVE: Maximise preference score
