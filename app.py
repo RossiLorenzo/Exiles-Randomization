@@ -13,8 +13,8 @@ def solve():
     # Get data and calculate M/F particpant numbers
     fencers = request.get_json()["fencers"]
     reserves = []
-    n_f = len([fencer for fencer in fencers if fencer["gender"].upper() == "F"])
-    n_m = len([fencer for fencer in fencers if fencer["gender"].upper() == "M"])
+    n_f = len([fencer for fencer in fencers if fencer["category"].upper() == "F"])
+    n_m = len([fencer for fencer in fencers if fencer["category"].upper() == "M"])
     n = n_f + n_m
     teams = n // 3
     print("Participants:", n)
@@ -25,27 +25,27 @@ def solve():
         print("3*n_f < n")
         to_remove = n - 3 * n_f
         print(n - 3 * n_f)
-        m_fencers = [fencer for fencer in fencers if fencer["gender"].upper() == "M"]
+        m_fencers = [fencer for fencer in fencers if fencer["category"].upper() == "M"]
         reserves = reserves + random.sample(m_fencers, to_remove)
         fencers = [fencer for fencer in fencers if fencer not in reserves]
-        n_m = len([fencer for fencer in fencers if fencer["gender"].upper() == "M"])
+        n_m = len([fencer for fencer in fencers if fencer["category"].upper() == "M"])
         n = n_f + n_m
         teams = n // 3
 
     # I don't think we'll have this, but if we have so many F that we get F only teams remove some F
     # if n_f > teams*2:
     #     to_remove = n_f - teams*2
-    #     f_fencers = [fencer for fencer in fencers if fencer["gender"].upper() == "F"]
+    #     f_fencers = [fencer for fencer in fencers if fencer["category"].upper() == "F"]
     #     reserves = reserves + random.sample(f_fencers, to_remove)
     #     fencers = [fencer for fencer in fencers if fencer not in reserves]
-    #     n_f = len([fencer for fencer in fencers if fencer["gender"].upper() == "F"])
+    #     n_f = len([fencer for fencer in fencers if fencer["category"].upper() == "F"])
     #     n = len(fencers)
     #     teams = len(fencers) // 3
 
     # If the number of fencers is not a multiple of 3, randomly exclude fencers until it is
     if n % 3 != 0:
         to_remove = n % 3
-        m_fencers = [fencer for fencer in fencers if fencer["gender"].upper() == "M"]
+        m_fencers = [fencer for fencer in fencers if fencer["category"].upper() == "M"]
         reserves = reserves + random.sample(m_fencers, to_remove)
         fencers = [fencer for fencer in fencers if fencer not in reserves]
         n = n_f + n_m
@@ -76,7 +76,7 @@ def solve():
                 x[(i, t, w)]
                 for i in range(n)
                 for w in WEAPONS
-                if fencers[i]["gender"].upper() == "F"
+                if fencers[i]["category"].upper() == "F"
             )
             >= 1
         )
@@ -88,7 +88,7 @@ def solve():
                 x[(i, t, w)]
                 for i in range(n)
                 for w in WEAPONS
-                if fencers[i]["gender"].upper() == "F"
+                if fencers[i]["category"].upper() == "F"
             )
             <= 2
         )
@@ -113,7 +113,7 @@ def solve():
                 if x[(i, t, w)].solution_value() > 0.5:
                     team_members[w] = {
                         "name": fencers[i]["name"],
-                        "gender": fencers[i]["gender"],
+                        "category": fencers[i]["category"],
                         "preference": fencers[i]["preference"][w],
                     }
         output.append({"team": t + 1, "members": team_members})
