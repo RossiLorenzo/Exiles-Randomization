@@ -133,8 +133,7 @@ def solve():
         output = output + output_reserves
 
     # For the last reserves we assign them to their favorite weapon and then to a random team where the F fencer has not that weapon.
-    if len(reserves) > 0:
-
+    # if len(reserves) > 0:
 
     # Return results
     return jsonify({"status": "ok", "teams": output})
