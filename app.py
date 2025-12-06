@@ -137,9 +137,14 @@ def solve():
         for reserve in reserves:
             # Determine favorite weapon (highest preference score)
             favorite_weapon = max(reserve["preference"], key=reserve["preference"].get)
+            reserve["weapon"] = favorite_weapon
 
             valid_teams = []
             for team in output:
+                # Constraint: Max 1 reserve per team.
+                if "reserves" in team and len(team["reserves"]) > 0:
+                    continue
+
                 members = team["members"]
                 # Identify Assigned Weapons of Female Fencers in this team
                 f_weapons_assigned = [
@@ -163,11 +168,17 @@ def solve():
                 if is_valid:
                     valid_teams.append(team)
 
-            # Assign to a random valid team, or random any team if no valid options
+            # Assign to a random valid team
             if valid_teams:
                 target_team = random.choice(valid_teams)
             else:
-                target_team = random.choice(output)
+                # Fallback: Assign to ANY team that doesn't have a reserve yet
+                teams_without_reserves = [t for t in output if "reserves" not in t or len(t["reserves"]) == 0]
+                if teams_without_reserves:
+                     target_team = random.choice(teams_without_reserves)
+                else:
+                     # Absolute fallback (should basically never happen given 0-2 reserves and N teams)
+                     target_team = random.choice(output)
 
             if "reserves" not in target_team:
                 target_team["reserves"] = []
