@@ -1,7 +1,7 @@
 # Exiles - Random Team/Weapon Assignment - Technical Details
 
 ## Context
-For the first time ever, the Kent [Exiles](https://tomflecs.wixsite.com/thekentexiles) competition will trial a new format in which participants enter **individually** and not in already formed teams. Both weapon assignment and team assignment are random.
+For the first time ever, the Kent [Exiles](https://tomflecs.wixsite.com/thekentexiles) competition will trial a new format in which participants enter **individually** and not in already formed teams. Both weapon assignment and team assignment are random. 
 
 To minimize kit swaps and to allow the majority of the participants to fence their best weapon, when entering the competition each fencer was asked to rank their favorite weapon choices.
 
