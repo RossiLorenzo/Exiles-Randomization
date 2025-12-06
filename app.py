@@ -133,7 +133,45 @@ def solve():
         output = output + output_reserves
 
     # For the last reserves we assign them to their favorite weapon and then to a random team where the F fencer has not that weapon.
-    # if len(reserves) > 0:
+    if len(reserves) > 0:
+        for reserve in reserves:
+            # Determine favorite weapon (highest preference score)
+            favorite_weapon = max(reserve["preference"], key=reserve["preference"].get)
+
+            valid_teams = []
+            for team in output:
+                members = team["members"]
+                # Identify Assigned Weapons of Female Fencers in this team
+                f_weapons_assigned = [
+                    w for w, m in members.items() if m["category"].upper() == "F"
+                ]
+                num_f = len(f_weapons_assigned)
+
+                is_valid = False
+                if num_f >= 2:
+                    # If team has 2 or 3 F: reserve must have favorite weapon SAME as one of the F fencers
+                    if favorite_weapon in f_weapons_assigned:
+                        is_valid = True
+                elif num_f == 1:
+                    # If team has 1 F: reserve must NOT have same weapon as the F fencer
+                    if favorite_weapon != f_weapons_assigned[0]:
+                        is_valid = True
+                else:
+                    # Fallback if no F (should not happen due to constraints)
+                    is_valid = True
+
+                if is_valid:
+                    valid_teams.append(team)
+
+            # Assign to a random valid team, or random any team if no valid options
+            if valid_teams:
+                target_team = random.choice(valid_teams)
+            else:
+                target_team = random.choice(output)
+
+            if "reserves" not in target_team:
+                target_team["reserves"] = []
+            target_team["reserves"].append(reserve)
 
     # Return results
     return jsonify({"status": "ok", "teams": output})
