@@ -135,12 +135,20 @@ def solve():
     # For the last reserves we assign them to their favorite weapon and then to a random team where the F fencer has not that weapon.
     if len(reserves) > 0:
         for reserve in reserves:
-            # Determine favorite weapon (highest preference score)
-            favorite_weapon = max(reserve["preference"], key=reserve["preference"].get)
-            reserve["weapon"] = favorite_weapon
-
-            priority_teams = []
-            other_valid_teams = []
+            # Determine sorted weapons by preference (descending)
+            # stored as list of (weapon, score)
+            sorted_prefs = sorted(
+                reserve["preference"].items(), key=lambda item: item[1], reverse=True
+            )
+            favorite_weapon = sorted_prefs[0][0]
+            
+            # Candidates for 2F teams: Any weapon with score >= 3 is acceptable if it matches.
+            # But we prefer Favorite over 2nd Favorite. 
+            # Actually, standard matching logic:
+            # We want to find a valid assignment.
+            
+            priority_options = [] # List of (team, weapon_to_use)
+            other_options = []    # List of (team, weapon_to_use)
 
             for team in output:
                 # Constraint: Max 1 reserve per team.
@@ -153,29 +161,75 @@ def solve():
                 ]
                 num_f = len(f_weapons_assigned)
 
+                if num_f == 0:
+                     # 3M constraint: Exclude
+                     continue
+
                 if num_f >= 2:
-                    # If team has 2 or 3 F: reserve must have favorite weapon SAME as one of the F fencers
+                    # 2F+ Team Priority Rule
+                    # 1. Try Favorite Weapon
                     if favorite_weapon in f_weapons_assigned:
-                        priority_teams.append(team)
+                        priority_options.append((team, favorite_weapon))
+                    else:
+                        # 2. Try Secondary Weapons (Score >= 3)
+                        # Find the first one that matches
+                        found_secondary = False
+                        for w, score in sorted_prefs:
+                            if w == favorite_weapon: continue
+                            if score < 3: break # sorted desc, so we can stop
+                            
+                            if w in f_weapons_assigned:
+                                priority_options.append((team, w))
+                                found_secondary = True
+                                break # Use the best available secondary
+                        
                 elif num_f == 1:
-                    # If team has 1 F: reserve must NOT have same weapon as the F fencer
+                    # 1F Team Rule (Standard)
+                    # Reserve must NOT have same weapon as F.
+                    # Strict: Use Favorite Weapon only? 
+                    # User only mentioned relaxing rule for 2F. 
+                    # So for 1F we stick to favorite_weapon.
                     if favorite_weapon != f_weapons_assigned[0]:
-                        other_valid_teams.append(team)
+                         other_options.append((team, favorite_weapon))
 
-            # Assign to a random valid team, prioritizing those with 2+ Fencers
-            if priority_teams:
-                target_team = random.choice(priority_teams)
-            elif other_valid_teams:
-                target_team = random.choice(other_valid_teams)
+            # Selection Logic
+            final_selection = None # (team, weapon)
+
+            if priority_options:
+                final_selection = random.choice(priority_options)
+            elif other_options:
+                final_selection = random.choice(other_options)
             else:
-                # Fallback: Assign to ANY team that doesn't have a reserve yet
-                teams_without_reserves = [t for t in output if "reserves" not in t or len(t["reserves"]) == 0]
+                # Fallback: Assign to ANY team > 0F without reserve
+                # Use Favorite Weapon as default for fallback
+                teams_without_reserves = [
+                    t for t in output 
+                    if ("reserves" not in t or len(t["reserves"]) == 0)
+                    and len([m for m in t["members"].values() if m["category"].upper() == "F"]) > 0
+                ]
+                
                 if teams_without_reserves:
-                     target_team = random.choice(teams_without_reserves)
+                     t = random.choice(teams_without_reserves)
+                     final_selection = (t, favorite_weapon)
                 else:
-                     # Absolute fallback
-                     target_team = random.choice(output)
+                     # Absolute fallback (try to find any >0F team even if reserve exists? Or just 3M?)
+                     # Try to avoid 3M if possible.
+                     teams_with_f = [
+                        t for t in output 
+                        if len([m for m in t["members"].values() if m["category"].upper() == "F"]) > 0
+                     ]
+                     if teams_with_f:
+                         t = random.choice(teams_with_f)
+                         final_selection = (t, favorite_weapon)
+                     else:
+                         t = random.choice(output)
+                         final_selection = (t, favorite_weapon)
 
+            # Apply Assignment
+            target_team, assigned_weapon = final_selection
+            
+            reserve["weapon"] = assigned_weapon
+            
             if "reserves" not in target_team:
                 target_team["reserves"] = []
             target_team["reserves"].append(reserve)

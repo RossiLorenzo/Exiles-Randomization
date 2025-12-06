@@ -207,5 +207,74 @@ class TestExilesSolver(unittest.TestCase):
         else:
             self.fail("Solver did not produce expected 2F/1F team split.")
 
+    @unittest.mock.patch('random.choice')
+    @unittest.mock.patch('random.sample')
+    def test_secondary_weapon_priority(self, mock_sample, mock_choice):
+        """Test that reserve takes 2nd favorite weapon (score >= 3) to join 2F team if favorite doesn't match"""
+        
+        # Scenario:
+        # T1 (2F): F1(Foil), F2(Epee), M1(Sabre).
+        # T2 (1F): F3(Epee), M2(Foil), M3(Sabre).
+        
+        # Reserve: M. Prefs: Foil=1, Sabre=3, Epee=5.
+        # Favorite: Epee (5).
+        # T1 (2F): Epee matches F2(Epee).
+        # Wait, if Favorite matches, it takes Favorite. That's standard.
+        # We need Favorite NOT to match.
+        
+        # New Reserve: M. Prefs: Sabre=5 (Fav), Foil=3 (2nd), Epee=1.
+        # T1 (2F): F1(Foil), F2(Epee). Reserve(Sabre) matches NONE.
+        # Reserve(Foil, 3) matches F1(Foil).
+        # Criterion: 2nd Fav >= 3 matches. So should be VALID Priority.
+        # Reserve should be assigned to T1 with FOIL.
+        
+        # T2 (1F): F3(Epee). Reserve(Sabre) != F3(Epee). Valid Standard.
+        # Priority > Standard. So should go to T1.
+        
+        fencers = [
+             self.create_fencer("F1", "F", "foil"), # T1
+             self.create_fencer("F2", "F", "epee"), # T1
+             self.create_fencer("M1", "M", "sabre"), # T1
+             
+             self.create_fencer("F3", "F", "epee"), # T2
+             self.create_fencer("M2", "M", "foil"),  # T2
+             self.create_fencer("M3", "M", "sabre"), # T2
+             
+             # Reserve
+             {"name": "ReserveFlex", "category": "M", "preference": {"sabre": 5, "foil": 3, "epee": 1}}
+        ]
+
+        def side_effect_sample(population, k):
+            res = [f for f in population if f["name"] == "ReserveFlex"]
+            if res and k==1: return res
+            return population[:k]
+        mock_sample.side_effect = side_effect_sample
+        
+        # Mock random.choice to ensure deterministic behavior for team selection?
+        # App logic:
+        # if priority_options: final = random.choice(priority_options)
+        # We expect priority_options to contain T1 with Foil.
+        # If it works, random.choice will pick from list of size 1. So it's fine.
+        # BUT we need mock_choice to behave normally for other calls (list -> item).
+        mock_choice.side_effect = lambda seq: seq[0] 
+        
+        payload = {"fencers": fencers}
+        response = self.app.post('/solve', json=payload)
+        data = json.loads(response.data)
+        teams = data["teams"]
+        
+        team_2f = None
+        for t in teams:
+            f_count = len([m for m in t["members"].values() if m["category"] == "F"])
+            if f_count >= 2:
+                team_2f = t
+                
+        self.assertIsNotNone(team_2f)
+        self.assertIn("reserves", team_2f)
+        self.assertEqual(len(team_2f["reserves"]), 1)
+        r = team_2f["reserves"][0]
+        self.assertEqual(r["name"], "ReserveFlex")
+        self.assertEqual(r["weapon"], "foil", "Should have picked 2nd favorite (Foil) to match T1")
+
 if __name__ == '__main__':
     unittest.main()
