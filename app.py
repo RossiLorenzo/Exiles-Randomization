@@ -147,6 +147,7 @@ def solve():
             # Actually, standard matching logic:
             # We want to find a valid assignment.
             
+            print(f"DEBUG: Processing Reserve {reserve['name']}, Fav: {favorite_weapon}")
             priority_options = [] # List of (team, weapon_to_use)
             other_options = []    # List of (team, weapon_to_use)
 
@@ -160,6 +161,7 @@ def solve():
                     w for w, m in members.items() if m["category"].upper() == "F"
                 ]
                 num_f = len(f_weapons_assigned)
+                # print(f"DEBUG: Team {team['team']} has {num_f} Fencers. Assigned F-Weapons: {f_weapons_assigned}")
 
                 if num_f == 0:
                      # 3M constraint: Exclude
@@ -184,13 +186,34 @@ def solve():
                                 break # Use the best available secondary
                         
                 elif num_f == 1:
-                    # 1F Team Rule (Standard)
-                    # Reserve must NOT have same weapon as F.
-                    # Strict: Use Favorite Weapon only? 
-                    # User only mentioned relaxing rule for 2F. 
-                    # So for 1F we stick to favorite_weapon.
-                    if favorite_weapon != f_weapons_assigned[0]:
+                    # 1F Team Rule
+                    f_weapon = f_weapons_assigned[0]
+                    # print(f"DEBUG: 1F Check. Fav: {favorite_weapon}, F_Web: {f_weapon}")
+                    
+                    # Check Favorite first
+                    if favorite_weapon != f_weapon:
                          other_options.append((team, favorite_weapon))
+                    else:
+                        # Favorite matches F-weapon.
+                        # If Reserve is M, we MUST NOT match. So we look for a secondary weapon.
+                         if reserve["category"].upper() == "M":
+                            # print(f"DEBUG: Reserve is M. Scanning Secondary. Sorted: {sorted_prefs}")
+                            for w, score in sorted_prefs:
+                                if w != f_weapon:
+                                    # Found a non-conflicting weapon
+                                    # print(f"DEBUG: Found alternative: {w}")
+                                    other_options.append((team, w))
+                                    break
+                         else:
+                            # Also check for F? Or just ignore? current behavior allows skip.
+                            # Standardizing on trying to find a spot.
+                            for w, score in sorted_prefs:
+                                if w != f_weapon:
+                                    other_options.append((team, w))
+                                    break
+            
+            # print(f"DEBUG: Priority: {priority_options}")
+            # print(f"DEBUG: Other: {other_options}")
 
             # Selection Logic
             final_selection = None # (team, weapon)
