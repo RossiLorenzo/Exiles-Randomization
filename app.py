@@ -139,45 +139,41 @@ def solve():
             favorite_weapon = max(reserve["preference"], key=reserve["preference"].get)
             reserve["weapon"] = favorite_weapon
 
-            valid_teams = []
+            priority_teams = []
+            other_valid_teams = []
+
             for team in output:
                 # Constraint: Max 1 reserve per team.
                 if "reserves" in team and len(team["reserves"]) > 0:
                     continue
 
                 members = team["members"]
-                # Identify Assigned Weapons of Female Fencers in this team
                 f_weapons_assigned = [
                     w for w, m in members.items() if m["category"].upper() == "F"
                 ]
                 num_f = len(f_weapons_assigned)
 
-                is_valid = False
                 if num_f >= 2:
                     # If team has 2 or 3 F: reserve must have favorite weapon SAME as one of the F fencers
                     if favorite_weapon in f_weapons_assigned:
-                        is_valid = True
+                        priority_teams.append(team)
                 elif num_f == 1:
                     # If team has 1 F: reserve must NOT have same weapon as the F fencer
                     if favorite_weapon != f_weapons_assigned[0]:
-                        is_valid = True
-                else:
-                    # Fallback if no F (should not happen due to constraints)
-                    is_valid = True
+                        other_valid_teams.append(team)
 
-                if is_valid:
-                    valid_teams.append(team)
-
-            # Assign to a random valid team
-            if valid_teams:
-                target_team = random.choice(valid_teams)
+            # Assign to a random valid team, prioritizing those with 2+ Fencers
+            if priority_teams:
+                target_team = random.choice(priority_teams)
+            elif other_valid_teams:
+                target_team = random.choice(other_valid_teams)
             else:
                 # Fallback: Assign to ANY team that doesn't have a reserve yet
                 teams_without_reserves = [t for t in output if "reserves" not in t or len(t["reserves"]) == 0]
                 if teams_without_reserves:
                      target_team = random.choice(teams_without_reserves)
                 else:
-                     # Absolute fallback (should basically never happen given 0-2 reserves and N teams)
+                     # Absolute fallback
                      target_team = random.choice(output)
 
             if "reserves" not in target_team:
